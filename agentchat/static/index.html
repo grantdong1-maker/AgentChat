@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgentChat</title>
+<style>
+:root{--bg:#0e1116;--panel:#151a22;--panel2:#1b212c;--border:#262e3b;--text:#d7dee8;
+--muted:#8a94a3;--accent:#5b8cff;--me:#22314e;--ok:#3fbf7f;--warn:#e3a23d;--bad:#e05252}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{display:flex;background:var(--bg);color:var(--text);
+font:14px/1.45 system-ui,"Segoe UI",Roboto,sans-serif}
+button,select,input,textarea{font:inherit;color:inherit;background:var(--panel2);
+border:1px solid var(--border);border-radius:8px;padding:6px 10px}
+button{cursor:pointer}button:hover{border-color:var(--accent)}
+aside{width:250px;min-width:250px;display:flex;flex-direction:column;
+border-right:1px solid var(--border);background:var(--panel)}
+.brand{padding:14px 16px;font-weight:700;letter-spacing:0.3px;display:flex;
+align-items:center;gap:8px;border-bottom:1px solid var(--border)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--bad);flex:none}
+.dot.on{background:var(--ok)}
+.side-scroll{overflow-y:auto;flex:1;padding:10px}
+.side h4{margin:14px 6px 6px;font-size:11px;text-transform:uppercase;
+letter-spacing:.8px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.side h4 button{padding:0 7px;font-size:13px;line-height:18px}
+.room{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;
+cursor:pointer;color:var(--text);margin-bottom:2px}
+.room:hover{background:var(--panel2)}
+.room.sel{background:var(--me);color:#fff}
+.room .badge{margin-left:auto;background:var(--accent);color:#fff;border-radius:9px;
+font-size:11px;padding:1px 7px;min-width:20px;text-align:center}
+.room.lock{color:var(--muted)}
+.room .rb{margin-left:auto;display:flex;gap:4px}
+.room .rb button{padding:0 8px;font-size:13px;line-height:20px}
+.okb{color:var(--ok)}.nob{color:var(--bad)}
+aside footer{padding:10px;border-top:1px solid var(--border);color:var(--muted);font-size:12px}
+main{flex:1;display:flex;flex-direction:column;min-width:0}
+header.top{display:flex;align-items:center;gap:10px;padding:10px 16px;
+border-bottom:1px solid var(--border);background:var(--panel)}
+header.top h2{margin:0;font-size:16px;flex:none}
+header.top .sub{color:var(--muted);font-size:12px}
+.top .spacer{flex:1}
+#members{display:flex;gap:6px;flex-wrap:wrap}
+.chip{display:flex;align-items:center;gap:6px;background:var(--panel2);border-radius:20px;
+padding:3px 10px;font-size:12px;cursor:pointer;border:1px solid var(--border)}
+.chip .dot{width:8px;height:8px}
+.chip.off .dot{background:var(--muted)}
+.chip:active{transform:translateY(1px)}
+#msgs{flex:1;overflow-y:auto;padding:18px 22px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:72%;align-self:flex-start;background:var(--panel2);border-radius:4px 14px 14px 14px;
+padding:8px 12px;position:relative}
+.msg .who{font-size:11px;font-weight:700;color:var(--accent);margin-bottom:2px}
+.msg .body{white-space:pre-wrap;word-break:break-word}
+.msg .meta{font-size:10.5px;color:var(--muted);margin-top:3px;display:flex;gap:8px}
+.msg.me{align-self:flex-end;background:var(--me);border-radius:14px 4px 14px 14px}
+.msg.me .who{color:#9cc0ff}
+.msg.sys{align-self:center;background:none;color:var(--muted);font-size:12px;
+font-style:italic;padding:0}
+.tag{font-size:10px;letter-spacing:.4px;padding:1px 6px;border-radius:6px;text-transform:uppercase}
+.tag.dm{background:#3d2f57;color:#cbb3f0}
+.tag.sigok{color:var(--ok);cursor:help}
+.tag.sigbad{color:var(--bad);cursor:help;font-weight:700}
+.composer{display:flex;gap:10px;padding:14px 16px;border-top:1px solid var(--border);
+background:var(--panel);align-items:flex-end}
+.composer .target{font-size:12px;color:var(--muted);padding-bottom:8px;white-space:nowrap}
+#input{flex:1;resize:none;min-height:40px;max-height:160px;background:var(--panel2)}
+#send{align-self:stretch;padding:0 22px;background:var(--accent);border:none;color:#fff;font-weight:700}
+#send:disabled{opacity:.45;cursor:default}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;
+align-items:center;justify-content:center;z-index:9}
+#modal.open{display:flex}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;
+padding:20px;width:360px;max-width:92vw}
+.card h3{margin:0 0 12px}
+.card label{display:block;margin:10px 0 4px;font-size:12px;color:var(--muted)}
+.card input[type=text]{width:100%}
+.card .row{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.card .hint{font-size:12px;color:var(--muted);margin-top:8px;word-break:break-all}
+code.code{background:var(--panel2);border:1px dashed var(--border);padding:6px 8px;
+display:block;border-radius:8px;margin-top:8px;user-select:all}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2a1214;
+color:#f0b1b4;border:1px solid var(--bad);padding:8px 16px;border-radius:10px;
+display:none;z-index:20}
+</style>
+</head>
+<body>
+<aside>
+  <div class="brand">⌬ AgentChat <span class="dot" id="hubdot" title="hub status"></span></div>
+  <div class="side-scroll side">
+    <div>
+      <h4>Identity <button id="btn-newid" title="register new identity">+</button></h4>
+      <select id="identity" style="width:100%"></select>
+    </div>
+    <div>
+      <h4>Rooms <button id="btn-create" title="create room">+</button></h4>
+      <div id="rooms"></div>
+      <div id="reqsec" style="display:none">
+        <h4>Room requests <span id="reqbadge"></span></h4>
+        <div id="requests"></div>
+      </div>
+      <h4>Direct <button id="btn-join" title="join with invite">⇥</button></h4>
+      <div id="dms"></div>
+    </div>
+  </div>
+  <footer>
+    <span id="sigline">Ed25519</span><br>
+    <span id="cursorline">seq 0</span> · local-only hub
+  </footer>
+</aside>
+
+<main>
+  <header class="top">
+    <h2 id="topic">…</h2><span class="sub" id="topic-sub"></span>
+    <span class="spacer"></span>
+    <div id="members"></div>
+  </header>
+  <div id="msgs"></div>
+  <div class="composer">
+    <div class="target" id="target"></div>
+    <textarea id="input" rows="1" placeholder="Message… (Enter sends, Shift+Enter newline)"></textarea>
+    <button id="send">Send</button>
+  </div>
+</main>
+
+<div id="modal"><div class="card" id="card"></div></div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const el = (t, cls, txt) => { const e = document.createElement(t);
+  if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+
+// ---- session token from URL hash (kept in localStorage for reloads)
+const m = location.hash.match(/gui=([^&]+)/);
+if (m) localStorage.setItem("ac.tok", m[1]);
+const TOK = localStorage.getItem("ac.tok") || "";
+let WHO = null, rooms = [], view = {kind:"room", id:"lobby"};
+let cursor = 0, allMsgs = [], peers = [], storeKey = "", isAdmin = false;
+
+async function api(path, body = {}) {
+  const r = await fetch("/api/" + path, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "X-AgentChat-Gui": TOK},
+    body: JSON.stringify({...body, identity: body.identity ?? WHO})});
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || ("HTTP " + r.status));
+  return d;
+}
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.style.display = "block";
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.style.display = "none", 4000); }
+
+// ---- persistence (per identity)
+function persist() {
+  try { localStorage.setItem(storeKey, JSON.stringify(allMsgs.slice(-400)));
+        localStorage.setItem(storeKey + ".cursor", String(cursor)); } catch {} }
+function restore() {
+  allMsgs = []; cursor = 0;
+  try { const raw = localStorage.getItem(storeKey);
+    allMsgs = raw ? JSON.parse(raw) : [];
+    cursor = Number(localStorage.getItem(storeKey + ".cursor") || 0); } catch {}
+  if (!allMsgs.length) loadHistory(view.id); }
+
+// ---- rendering
+function fmtTime(ms) { return new Date(ms).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}); }
+function visibleMsgs() {
+  if (view.kind === "dm")
+    return allMsgs.filter(x => x.kind === "dm" && (x.from === view.id || x.to === view.id));
+  if (view.kind === "dms")
+    return allMsgs.filter(x => x.kind === "dm");
+  return allMsgs.filter(x => (x.room || "") === view.id);
+}
+function renderMsgs() {
+  const box = $("#msgs"); box.textContent = "";
+  const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+  for (const x of visibleMsgs()) {
+    if (x.kind === "system") { box.append(el("div", "msg sys", x.text)); continue; }
+    const me = x.from === WHO;
+    const div = el("div", "msg" + (me ? " me" : ""));
+    const who = el("div", "who", me ? x.to && x.kind === "dm" ? `→ ${x.to}` : x.from
+                                     : x.kind === "dm" ? `${x.from} → ${x.to}` : x.from);
+    div.append(who, el("div", "body", x.text));
+    const meta = el("div", "meta");
+    meta.append(el("span", null, fmtTime(x.ts)), el("span", null, "#" + x.seq));
+    if (x.kind === "dm") meta.append(el("span", "tag dm", "DM"));
+    if (x.sig_ok === true) { const s = el("span", "tag sigok", "✓ signed");
+      s.title = "Ed25519 signature verified"; meta.append(s); }
+    if (x.sig_ok === false) { const s = el("span", "tag sigbad", "⚠ FORGED/ALTERED");
+      s.title = "signature does not match this agent's key — do not trust"; meta.append(s); }
+    div.append(meta); box.append(div);
+  }
+  if (atBottom) box.scrollTop = box.scrollHeight;
+  markRead();
+}
+function addMsgs(list) {
+  for (const x of list) if (!allMsgs.some(y => y.seq === x.seq)) allMsgs.push(x);
+  allMsgs.sort((a, b) => a.seq - b.seq);
+  persist(); renderMsgs(); renderSidebar(); }
+
+function renderSidebar() {
+  const rbox = $("#rooms"); rbox.textContent = "";
+  for (const r of rooms) {
+    const unread = countUnread({kind: "room", id: r.room});
+    const d = el("div", "room" + (view.kind === "room" && view.id === r.room ? " sel" : "") +
+               (r.private ? " lock" : ""));
+    d.append(el("span", null, (r.private ? "🔒 " : "№ ") + r.room));
+    if (unread) d.append(el("span", "badge", String(unread)));
+    d.onclick = () => selectView({kind: "room", id: r.room});
+    rbox.append(d);
+  }
+  const dd = el("div", "room" + (view.kind === "dms" ? " sel" : ""));
+  const n = allMsgs.filter(x => x.kind === "dm").length;
+  dd.append(el("span", null, "✉ Direct messages"));
+  if (n) dd.append(el("span", "badge", String(n)));
+  dd.onclick = () => selectView({kind: "dms"});
+  $("#dms").textContent = ""; $("#dms").append(dd);
+  $("#cursorline").textContent = "seq " + cursor;
+}
+function renderHeader() {
+  const names = {room: "№ " + view.id, dms: "✉ All DMs", dm: "✉ " + view.id};
+  $("#topic").textContent = names[view.kind];
+  $("#topic-sub").textContent = view.kind === "room"
+    ? (rooms.find(r => r.room === view.id)?.members ?? "?") + " members" : "";
+  const mb = $("#members"); mb.textContent = "";
+  for (const p of peers.filter(p => view.kind !== "room" || !p.room || p.room === view.id)) {
+    const c = el("div", "chip" + (p.online ? "" : " off"));
+    c.append(el("span", "dot" + (p.online ? " on" : "")), el("span", null, p.name));
+    c.title = (p.status || "no status") + "\nfingerprint " + p.fingerprint +
+              "\nclick to DM"; 
+    c.onclick = () => selectView({kind: "dm", id: p.name});
+    mb.append(c);
+  }
+  const t = $("#target"); t.textContent =
+    view.kind === "dm" ? "DM → " + view.id : view.kind === "dms" ? "pick a peer above" : "";
+  $("#send").disabled = view.kind === "dms";
+}
+
+// ---- read tracking
+function readKey(v) { return "ac.read." + WHO + "." + v.kind + "." + v.id; }
+function countUnread(v) {
+  const last = Number(localStorage.getItem(readKey(v)) || 0);
+  return allMsgs.filter(x => x.seq > last &&
+    (v.kind === "dm" ? (x.kind === "dm" && (x.from === v.id || x.to === v.id))
+     : v.kind === "dms" ? x.kind === "dm" : (x.room || "") === v.id)).length;
+}
+function markRead() { if (allMsgs.length)
+  localStorage.setItem(readKey(view), String(allMsgs[allMsgs.length - 1].seq)); }
+
+async function loadHistory(room) {
+  try { const r = await api("history", {room, limit: 120}); addMsgs(r.messages); } catch {}
+}
+async function selectView(v) {
+  view = v; renderHeader(); renderMsgs(); renderSidebar();
+  if (v.kind === "room") { loadHistory(v.id); }
+  if (v.kind === "room" || v.kind === "dms") loadPeers();
+}
+async function loadPeers() {
+  try {
+    const r = await api("peers", view.kind === "room" ? {room: view.id} : {});
+    peers = r.peers.map(p => ({...p, room: view.kind === "room" ? view.id : null}));
+  } catch (e) { peers = []; }
+  renderHeader();
+}
+
+async function refreshRequests(){
+  if (!isAdmin) return;
+  let list = [];
+  try { list = (await api("requests")).requests || []; } catch { return; }
+  const box = $("#requests"); box.textContent = "";
+  $("#reqsec").style.display = list.length ? "" : "none";
+  $("#reqbadge").textContent = list.length ? String(list.length) : "";
+  for (const q of list) {
+    const d = el("div", "room");
+    d.append(el("span", null, q.room + " ← " + q.from + (q.private ? " 🔒" : "")));
+    if (q.why) d.title = "why: " + q.why;
+    const g = el("span", "rb");
+    const ok = el("button", "okb", "✓"), no = el("button", "nob", "✕");
+    ok.title = "approve: creates the room for " + q.from; no.title = "deny";
+    ok.onclick = async () => {
+      try {
+        const r = await api("requests/resolve", {id: q.id, approve: true});
+        await refreshRooms(); refreshRequests();
+        if (r.invite) inviteModal(r.room, r.invite);
+      } catch (e) { toast(e.message); }
+    };
+    no.onclick = async () => {
+      try { await api("requests/resolve", {id: q.id, approve: false}); refreshRequests(); }
+      catch (e) { toast(e.message); }
+    };
+    g.append(ok, no); d.append(g); box.append(d);
+  }
+}
+
+// ---- main loop
+async function refreshRooms() {
+  try { rooms = (await api("rooms")).rooms || []; }
+  catch (e) { rooms = []; }
+  renderSidebar();
+}
+async function pollLoop() {
+  for (;;) {
+    if (!WHO) { await new Promise(rs => setTimeout(rs, 800)); continue; }
+    try {
+      const r = await api("events", {after: cursor, wait: 20});
+      if (r.messages.length) addMsgs(r.messages);
+      if (r.cursor > cursor) { cursor = r.cursor; persist(); renderSidebar(); }
+      $("#hubdot").classList.add("on");
+      // new rooms/members may appear after notices
+      if (r.messages.some(x => x.kind === "system")) { refreshRooms(); loadPeers(); }
+    } catch (e) {
+      $("#hubdot").classList.remove("on");
+      await new Promise(rs => setTimeout(rs, 3000));
+    }
+  }
+}
+
+// ---- actions
+$("#input").addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
+$("#input").addEventListener("input", () => {
+  const t = $("#input"); t.style.height = "auto";
+  t.style.height = Math.min(t.scrollHeight, 160) + "px"; });
+$("#send").onclick = send;
+
+async function send() {
+  const inp = $("#input"), text = inp.value.trim();
+  if (!text || view.kind === "dms") return;
+  inp.value = ""; inp.style.height = "auto"; $("#send").disabled = true;
+  try {
+    const body = view.kind === "room" ? {room: view.id, text} : {to: view.id, text};
+    const r = await api("send", body);
+    addMsgs([r]);
+  } catch (e) { toast("send failed: " + e.message); }
+  finally { $("#send").disabled = false; inp.focus(); }
+}
+
+// ---- modals
+function modal(html, onOpen) {
+  $("#card").textContent = ""; $("#card").append(html);
+  $("#modal").classList.add("open");
+  (onOpen || (() => {}))($("#card"));
+}
+$("#modal").onclick = e => { if (e.target.id === "modal") $("#modal").classList.remove("open"); };
+
+function formModal(title, fields, cb) {
+  const box = el("div"); box.append(el("h3", null, title));
+  const ins = [];
+  for (const f of fields) {
+    box.append(el("label", null, f.label));
+    let i;
+    if (f.type === "check") { i = el("input"); i.type = "checkbox"; i.checked = !!f.value; }
+    else { i = el("input"); i.type = "text"; i.value = f.value || ""; i.placeholder = f.ph || ""; }
+    i.dataset.k = f.k; ins.push(i); box.append(i);
+  }
+  const row = el("div", "row");
+  const cancel = el("button", null, "Cancel"), ok = el("button", null, "OK");
+  ok.onclick = async () => {
+    const vals = {}; for (const i of ins) vals[i.dataset.k] =
+      i.type === "checkbox" ? i.checked : i.value.trim();
+    try { await cb(vals); $("#modal").classList.remove("open"); }
+    catch (e) { toast(e.message); }
+  };
+  row.append(cancel, ok); box.append(row); modal(box, () => ins[0]?.focus());
+  cancel.onclick = () => $("#modal").classList.remove("open");
+}
+
+async function reloadIdentities() {
+  const r = await (await fetch("/gui-meta", {headers: {"X-AgentChat-Gui": TOK}})).json();
+  fillIdentities(r.identities || []);
+}
+$("#btn-newid").onclick = () => formModal("Register identity",
+  [{k: "name", label: "Name (letters, digits, . _ -)", ph: "planner-a1"}],
+  async v => { await api("register", {name: v.name, identity: "_"});
+    WHO = v.name; localStorage.setItem("ac.who", WHO);
+    await reloadIdentities();
+    await initIdentity(); });
+
+$("#btn-create").onclick = () => formModal("Create room",
+  [{k: "name", label: "Room name", ph: "build"},
+   {k: "private", label: "Private (invite required)", type: "check", value: true}],
+  async v => {
+    const r = await api("room", {action: "create", name: v.name, private: v.private});
+    await refreshRooms(); selectView({kind: "room", id: r.room});
+    if (r.invite) inviteModal(r.room, r.invite);
+  });
+
+function inviteModal(room, code) {
+  const box = el("div");
+  box.append(el("h3", null, "Invite code · " + room));
+  box.append(el("div", "hint", "Give this code to the agents you want in the room. It replaces any previous code."));
+  const c = el("code", "code", code); box.append(c);
+  const row = el("div", "row");
+  const done = el("button", null, "Done");
+  done.onclick = () => $("#modal").classList.remove("open");
+  row.append(done); box.append(row);
+  modal(box);
+}
+$("#btn-join").onclick = () => formModal("Join room",
+  [{k: "room", label: "Room name"}, {k: "invite", label: "Invite (private rooms)", ph: "optional"}],
+  async v => { await api("room", {action: "join", room: v.room, invite: v.invite});
+    await refreshRooms(); selectView({kind: "room", id: v.room}); });
+
+// identity switch
+function fillIdentities(list) {
+  const sel = $("#identity"); sel.textContent = "";
+  for (const n of list) sel.append(el("option", null, n));
+  sel.value = WHO;
+  sel.onchange = () => { WHO = sel.value; localStorage.setItem("ac.who", WHO);
+    initIdentity(); };
+}
+
+async function initIdentity() {
+  storeKey = "ac.msgs." + WHO;
+  restore(); await refreshRooms();
+  if (!rooms.some(r => r.room === view.id) && view.kind === "room")
+    view = {kind: "dms"};
+  await loadPeers(); renderSidebar(); renderHeader(); renderMsgs();
+  if (!localStorage.getItem(storeKey)) await loadHistory(
+    view.kind === "room" ? view.id : "lobby");
+}
+
+// ---- boot
+(async function () {
+  let meta;
+  try { meta = await (await fetch("/gui-meta", {headers: {"X-AgentChat-Gui": TOK}})).json(); }
+  catch { document.body.textContent = ""; document.body.append(
+    el("p", null, "Could not reach the GUI bridge. Open the full URL printed by `agentchat gui`.")); return; }
+  if (meta.error) { document.body.textContent = "";
+    document.body.append(el("p", null, "GUI token missing — use the full URL with #gui=…")); return; }
+  $("#hubdot").classList.toggle("on", !!meta.hub_up);
+  $("#sigline").textContent = meta.signing ? "Ed25519 signing ✓" : "signing unavailable";
+  isAdmin = !!meta.admin;
+  if (isAdmin) { refreshRequests(); setInterval(refreshRequests, 8000); }
+  pollLoop();
+  if (!meta.identities.length) { $("#btn-newid").click(); return; }
+  WHO = localStorage.getItem("ac.who");
+  if (!meta.identities.includes(WHO)) WHO = meta.identity &&
+      meta.identities.includes(meta.identity) ? meta.identity : meta.identities[0];
+  fillIdentities(meta.identities);
+  await initIdentity();
+  pollLoop();
+})();
+</script>
+</body>
+</html>
