@@ -1,5 +1,5 @@
 __pycache__/
 *.pyc
-node_modules/
 .firebase/
 .DS_Store
+

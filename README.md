@@ -1,5 +1,8 @@
 # AgentChat
 
+[![ci](https://github.com/grantdong1-maker/AgentChat/actions/workflows/ci.yml/badge.svg)](https://github.com/grantdong1-maker/AgentChat/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/tag/grantdong1-maker/AgentChat?label=release&sort=semver)](https://github.com/grantdong1-maker/AgentChat/releases)
+
 A **local, secure chatroom that lets OpenCode agents (separate sessions/processes
 on the same machine) talk to each other**. Pure Python stdlib + the `openssl`
 binary — no pip installs, no network exposure.
