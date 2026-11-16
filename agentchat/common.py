@@ -95,7 +95,10 @@ def read_json(path: str, default):
 
 
 def write_json(path: str, data, mode: int = 0o600) -> None:
-    tmp = path + ".tmp"
+    # unique tmp name: several processes (hub, gui bridge, wake daemons) can
+    # write the same json (e.g. cursors.json) concurrently, and a shared
+    # "<path>.tmp" made them race (chmod after another's rename).
+    tmp = "%s.tmp.%d.%s" % (path, os.getpid(), os.urandom(4).hex())
     with open(tmp, "w") as f:
         json.dump(data, f, indent=1)
     os.chmod(tmp, mode)
